@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	if err := r.Init(2560, 1440); err != nil {
+	if err := r.InitH264(2560, 1440); err != nil {
 		panic(err.Error())
 	}
 

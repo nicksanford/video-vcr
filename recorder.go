@@ -23,12 +23,19 @@ type Recorder struct {
 func NewRecorder(dbPath string, logger logging.Logger) (*Recorder, error) {
 	return &Recorder{dbPath: dbPath, logger: logger}, nil
 }
+func (rs *Recorder) InitH264(width, height int) error {
+	return rs.init(true, width, height)
+}
 
-func (rs *Recorder) Init(width, height int) error {
+func (rs *Recorder) InitH265(width, height int) error {
+	return rs.init(false, width, height)
+}
+
+func (rs *Recorder) init(isH264 bool, width, height int) error {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	if rs.db != nil {
-		return errors.New("InitH265 called multiple times")
+		return errors.New("Init called multiple times")
 	}
 
 	if err := os.MkdirAll(path.Dir(rs.dbPath), 0o755); err != nil {
@@ -49,7 +56,7 @@ func (rs *Recorder) Init(width, height int) error {
 	})
 
 	sqlStmt := `
-    CREATE TABLE extradata(id INTEGER NOT NULL PRIMARY KEY, width INTEGER, height INTEGER);
+    CREATE TABLE extradata(id INTEGER NOT NULL PRIMARY KEY, isH264 BOOLEAN, width INTEGER, height INTEGER);
     CREATE TABLE packet(id INTEGER NOT NULL PRIMARY KEY, pts INTEGER,dts INTEGER,isIDR BOOLEAN, data BLOB);
 	`
 
@@ -57,7 +64,7 @@ func (rs *Recorder) Init(width, height int) error {
 		return err
 	}
 
-	if _, err = db.Exec("INSERT INTO extradata(width, height) VALUES(?, ?);", width, height); err != nil {
+	if _, err = db.Exec("INSERT INTO extradata(isH264, width, height) VALUES(?, ?, ?);", isH264, width, height); err != nil {
 		return err
 	}
 	g.Success()
