@@ -73,6 +73,9 @@ func (rs *Recorder) init(isH264 bool, width, height int) error {
 }
 
 func (rs *Recorder) Packet(payload []byte, pts int64, dts int64, isIDR bool) error {
+	if rs.db == nil {
+		return errors.New("vcr.Recorder not initialized")
+	}
 	if _, err := rs.db.Exec("INSERT INTO packet(pts, dts, isIDR, data) VALUES(?, ?, ?, ?);", pts, dts, isIDR, payload); err != nil {
 		return err
 	}
