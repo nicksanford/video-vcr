@@ -24,7 +24,7 @@ func NewRecorder(dbPath string, logger logging.Logger) (*Recorder, error) {
 	return &Recorder{dbPath: dbPath, logger: logger}, nil
 }
 
-func (rs *Recorder) Init(extradata []byte) error {
+func (rs *Recorder) Init(width, height int) error {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	if rs.db != nil {
@@ -49,15 +49,15 @@ func (rs *Recorder) Init(extradata []byte) error {
 	})
 
 	sqlStmt := `
-	CREATE TABLE extradata(id INTEGER NOT NULL PRIMARY KEY, data BLOB);
-	CREATE TABLE packet(id INTEGER NOT NULL PRIMARY KEY, pts INTEGER, isIDR BOOLEAN, data BLOB);
+    CREATE TABLE extradata(id INTEGER NOT NULL PRIMARY KEY, width INTEGER, height INTEGER);
+    CREATE TABLE packet(id INTEGER NOT NULL PRIMARY KEY, pts INTEGER,dts INTEGER,isIDR BOOLEAN, data BLOB);
 	`
 
 	if _, err := db.Exec(sqlStmt); err != nil {
 		return err
 	}
 
-	if _, err = db.Exec("INSERT INTO extradata(data) VALUES(?);", extradata); err != nil {
+	if _, err = db.Exec("INSERT INTO extradata(width, height) VALUES(?, ?);", width, height); err != nil {
 		return err
 	}
 	g.Success()
@@ -65,8 +65,8 @@ func (rs *Recorder) Init(extradata []byte) error {
 	return nil
 }
 
-func (rs *Recorder) Packet(payload []byte, pts int64, isIDR bool) error {
-	if _, err := rs.db.Exec("INSERT INTO packet(pts, isIDR, data) VALUES(?, ?, ?);", pts, isIDR, payload); err != nil {
+func (rs *Recorder) Packet(payload []byte, pts int64, dts int64, isIDR bool) error {
+	if _, err := rs.db.Exec("INSERT INTO packet(pts, dts, isIDR, data) VALUES(?, ?, ?, ?);", pts, dts, isIDR, payload); err != nil {
 		return err
 	}
 	return nil
