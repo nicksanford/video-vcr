@@ -20,18 +20,28 @@ type Recorder struct {
 	db     *sql.DB
 }
 
+type Codec int
+
+const (
+	CodecUnknown Codec = iota
+	CodecH264
+	CodecH265
+	CodecMPEG4
+	CodecMJPEG
+)
+
 func NewRecorder(dbPath string, logger logging.Logger) (*Recorder, error) {
 	return &Recorder{dbPath: dbPath, logger: logger}, nil
 }
-func (rs *Recorder) InitH264(width, height int) error {
-	return rs.init(true, width, height)
-}
 
-func (rs *Recorder) InitH265(width, height int) error {
-	return rs.init(false, width, height)
-}
-
-func (rs *Recorder) init(isH264 bool, width, height int) error {
+func (rs *Recorder) Init(codec Codec, width, height int) error {
+	switch codec {
+	case CodecH264, CodecH265, CodecMPEG4, CodecMJPEG:
+	case CodecUnknown:
+		fallthrough
+	default:
+		return errors.New("invalid codec")
+	}
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	if rs.db != nil {
@@ -40,6 +50,11 @@ func (rs *Recorder) init(isH264 bool, width, height int) error {
 
 	if err := os.MkdirAll(path.Dir(rs.dbPath), 0o755); err != nil {
 		return err
+	}
+
+	if _, err := os.Stat(rs.dbPath); err == nil {
+		rs.logger.Warnf("deleting existing db file: %s", rs.dbPath)
+		os.Remove(rs.dbPath)
 	}
 
 	db, err := sql.Open("sqlite3", rs.dbPath)
@@ -56,7 +71,7 @@ func (rs *Recorder) init(isH264 bool, width, height int) error {
 	})
 
 	sqlStmt := `
-    CREATE TABLE extradata(id INTEGER NOT NULL PRIMARY KEY, isH264 BOOLEAN, width INTEGER, height INTEGER);
+    CREATE TABLE extradata(id INTEGER NOT NULL PRIMARY KEY, codec INTEGER, width INTEGER, height INTEGER);
     CREATE TABLE packet(id INTEGER NOT NULL PRIMARY KEY, pts INTEGER,dts INTEGER,isIDR BOOLEAN, data BLOB);
 	`
 
@@ -64,7 +79,7 @@ func (rs *Recorder) init(isH264 bool, width, height int) error {
 		return err
 	}
 
-	if _, err = db.Exec("INSERT INTO extradata(isH264, width, height) VALUES(?, ?, ?);", isH264, width, height); err != nil {
+	if _, err = db.Exec("INSERT INTO extradata(codec, width, height) VALUES(?, ?, ?);", codec, width, height); err != nil {
 		return err
 	}
 	g.Success()

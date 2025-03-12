@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	if err := r.Init(vcr.CodecH265, 2560, 1440); err != nil {
+	if err := r.Init(vcr.CodecMJPEG, 2560, 1440); err != nil {
 		panic(err.Error())
 	}
 
