@@ -13,7 +13,7 @@ require (
 )
 
 require (
-	github.com/bluenviron/mediacommon/v2 v2.0.1-0.20250222132106-205c4f7f3850 // indirect
+	github.com/bluenviron/mediacommon v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -95,5 +95,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 )
-
-replace github.com/bluenviron/gortsplib/v4 => /Users/nicksanford/code/gortsplib/
